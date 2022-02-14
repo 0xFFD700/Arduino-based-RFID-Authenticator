@@ -1,70 +1,61 @@
-#include <Keyboard.h>
-#include <KeyboardLayout.h>
 #include <SPI.h>
-#include <RFID.h>
-#include <SoftwareSerial.h>
+#include <Keyboard.h>
+#include <MFRC522.h>
 
-#define SS_PIN 10
+// Constants
 #define RST_PIN 9
+#define SS_PIN 10
+#define LED_PIN 8
 
-RFID rfid(SS_PIN, RST_PIN);
+// Variables
+String RFIDUID;
 
-int led = 3;
-int serNum[5];
-
-String RfidString = "";
+// Create MFRC522 instance
+MFRC522 mfrc522(SS_PIN, RST_PIN);
 
 void setup() {
-
   Serial.begin(9600);
+
+  // Init SPI and MFRC522
+  while (!Serial);
   SPI.begin();
-  rfid.init();
-
-  pinMode(led, OUTPUT);
-  digitalWrite(led, LOW);
-
-  Keyboard.begin();
-
+  mfrc522.PCD_Init();
+  delay(4);
 }
 
-void loop() {
+void readRFID(byte *buffer, byte bufferSize)
+{
+  RFIDUID = "";
+  for (byte i = 0; i < bufferSize; i++)
+  {
+    RFIDUID = RFIDUID + String(buffer[i], HEX);
+  }
+}
 
-  if (rfid.isCard()) {
+void writePass() 
+{
+  Keyboard.print("test");
+  Keyboard.releaseAll();
+  delay(100);
+  Keyboard.press(KEY_RETURN);
+  Keyboard.releaseAll();
+  delay(1000);
+}
 
-    if (rfid.readCardSerial()) {
-
-      Serial.print(rfid.serNum[0] + "");
-      Serial.print(rfid.serNum[1] + "");
-      Serial.print(rfid.serNum[2] + "");
-      Serial.print(rfid.serNum[3] + "");
-      Serial.print(rfid.serNum[4] + "");
-      Serial.println("");
-
-      RfidString = rfid.serNum;
-
-      Serial.println(RfidString);
-
-      blinkLed();
-
-      Keyboard.println("3141"); key = "";
-        
-
-    }
+void loop() 
+{
+  // Reset the loop if no new card present on the sensor/reader. This saves the entire process when idle.
+  if ( ! mfrc522.PICC_IsNewCardPresent()) 
+  {
+    return;
   }
 
-  rfid.halt();
+  // Select one of the cards
+  if ( ! mfrc522.PICC_ReadCardSerial()) 
+  {
+    return;
+  }
 
-}
-
-void blinkLed() {
-  digitalWrite(led, HIGH);
-  delay(1000);
-  digitalWrite(led, HIGH);
-}
-
-void hashRfid() {
-}
-
-void writePassword() {
-  Keyboard.println("3141"); key = "";
+  readRFID(mfrc522.uid.uidByte, mfrc522.uid.size);
+  writePass();
 }
