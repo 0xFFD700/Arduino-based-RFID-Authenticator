@@ -16,11 +16,14 @@ MFRC522 mfrc522(SS_PIN, RST_PIN);
 void setup() {
   Serial.begin(9600);
 
+  pinMode(LED_PIN, OUTPUT);
+
   // Init SPI and MFRC522
   while (!Serial);
   SPI.begin();
   mfrc522.PCD_Init();
   delay(4);
+  Serial.print("RFID Connected");
 }
 
 void readRFID(byte *buffer, byte bufferSize)
@@ -34,12 +37,15 @@ void readRFID(byte *buffer, byte bufferSize)
 
 void writePass() 
 {
-  Keyboard.print("test");
+  digitalWrite(LED_PIN, HIGH);
+  Serial.print("Write password");
+  Keyboard.print("3141");
   Keyboard.releaseAll();
   delay(100);
   Keyboard.press(KEY_RETURN);
   Keyboard.releaseAll();
   delay(1000);
+  digitalWrite(LED_PIN, LOW);
 }
 
 void loop() 
